@@ -1,0 +1,60 @@
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+
+#include <Servo.h>
+
+Servo servoMotor; // Create a servo object to control the servo motor
+
+char command; // Variable to store incoming commands from Bluetooth
+
+// Set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+int val;
+int senPin = A0;
+int relPin = 8;
+void setup()
+{
+	// initialize the LCD
+	lcd.begin();
+  pinMode(senPin, INPUT);
+  pinMode(relPin, OUTPUT);
+	// Turn on the blacklight and print a message.
+	lcd.backlight();
+	lcd.print("Moisture : ");
+
+  Serial.begin(9600); // Initialize serial communication
+  servoMotor.attach(9); // Attach the servo to pin 9
+}
+
+
+void loop()
+{
+  
+  val = analogRead(senPin);
+  lcd.setCursor(12, 0);
+  lcd.print(val);
+  delay(500);
+  lcd.setCursor(0, 1);
+  if(val<800){
+    digitalWrite(relPin, LOW);
+    lcd.print("Water Off");
+  }else{
+    lcd.print("Water On");
+    digitalWrite(relPin, HIGH);
+     for (int i = 0; i < (16 - 10); i++) {
+      lcd.print(" "); // Print spaces to clear the remaining characters
+    }
+  }
+
+  if (Serial.available() > 0) { // Check if data is available to read
+    command = Serial.read(); // Read the incoming byte
+    Serial.print(command);
+    if (command == '1') { // If received command is '1'
+      servoMotor.write(0); // Move servo to 0 degree position
+      Serial.println("Motor moved to 0 degree");
+    } else if (command == '0') { // If received command is '0'
+      servoMotor.write(180); // Move servo to 200 degree position
+      Serial.println("Motor moved to 180 degree");
+    }
+  }
+}
